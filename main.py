@@ -34,7 +34,7 @@ if prompt := st.chat_input("Напиши что-нибудь..."):
         # Используем современную открытую модель Llama-3
         API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct"
         
-        # Публичный токен для работы, чтобы у тебя всё завелось без регистраций
+        # Твой рабочий токен
         headers = {"Authorization": "Bearer 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"}
         
         # Формируем промт так, чтобы ИИ понимал, что это чат
@@ -44,22 +44,28 @@ if prompt := st.chat_input("Напиши что-нибудь..."):
             response = requests.post(API_URL, headers=headers, json={
                 "inputs": formatted_prompt,
                 "parameters": {"max_new_tokens": 512, "temperature": 0.7}
-            })
-            result = response.json()
+            }, timeout=15) # Добавили ограничение по времени ожидания
             
-            if isinstance(result, list) and len(result) > 0:
-                full_response = result[0].get('generated_text', '')
-                # Чистим ответ от технических тегов модели
-                if formatted_prompt in full_response:
-                    full_response = full_response.replace(formatted_prompt, "")
-                full_response = full_response.split("<|eot_id|>")[0].strip()
-            elif isinstance(result, dict) and "error" in result:
-                full_response = "Я только просыпаюсь, повтори через пару секунд!"
+            if response.status_code == 200:
+                result = response.json()
+                if isinstance(result, list) and len(result) > 0:
+                    full_response = result[0].get('generated_text', '')
+                    # Чистим ответ от технических тегов модели
+                    if formatted_prompt in full_response:
+                        full_response = full_response.replace(formatted_prompt, "")
+                    full_response = full_response.split("<|eot_id|>")[0].strip()
+                else:
+                    full_response = f"Сервер вернул странный ответ: {result}"
+            
+            elif response.status_code == 503:
+                full_response = "Модель сейчас загружается на сервере Hugging Face. Подожди секунд 20-30 и повтори запрос!"
+            elif response.status_code == 401:
+                full_response = "Ошибка авторизации (401). Похоже, Hugging Face заблокировал этот токен, так как он попал в открытый доступ."
             else:
-                full_response = "Хм, я задумался. Попробуй отправить сообщение еще раз!"
+                full_response = f"Ошибка сервера ИИ. Код: {response.status_code}. Текст: {response.text}"
                 
-        except Exception:
-            full_response = "Не удалось связаться с сервером ИИ."
+        except Exception as e:
+            full_response = f"Не удалось связаться с сервером ИИ. Ошибка подключения: {e}"
 
         # Эффект печатающегося текста
         animated_text = ""
