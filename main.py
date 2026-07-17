@@ -35,7 +35,7 @@ if prompt := st.chat_input("Напиши что-нибудь..."):
         API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct"
         
         # Публичный токен для работы, чтобы у тебя всё завелось без регистраций
-       headers = {"Authorization": "Bearer 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"}
+        headers = {"Authorization": "Bearer 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"}
         
         # Формируем промт так, чтобы ИИ понимал, что это чат
         formatted_prompt = f"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
